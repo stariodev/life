@@ -1,0 +1,295 @@
+/*
+ * Life - Shared Conway board
+ * Editorial register: paper, ink, hairline rules. No cards, no chrome.
+ * Cells carry no owner — color is age: spark to ember to ash.
+ */
+
+:root {
+    --paper: #f7f5f0;
+    --ink: #1a1a17;
+    --ink-soft: #44443f;
+    --muted: #83816f;
+    --rule: #dedcd2;
+    /* The board is a dark field so cells can glow: gold at birth,
+       cooling through ember to a dim ash that sinks back into it. */
+    --field: #16130e;
+    --field-line: #262117;
+    --dead: #16130e;
+    --live: #16a34a;
+    --down: #b91c1c;
+    --erase: #f87171;
+    --cell: 11px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-family: 'Atkinson Hyperlegible', 'Avenir Next', system-ui, sans-serif;
+    height: 100%;
+}
+
+body {
+    background: var(--paper);
+    color: var(--ink);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#life {
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Top bar: one baseline of brand + running stats, hairline under. */
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.55rem 1.25rem;
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--ink);
+    text-decoration: none;
+}
+
+.brand img {
+    display: block;
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    /* Flex centres the line box; the serif's caps sit above it. */
+    transform: translateY(-2px);
+}
+
+.brand-name {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1;
+}
+
+.crumb {
+    color: var(--rule);
+    font-weight: 300;
+    line-height: 1;
+}
+
+.app-name {
+    font-family: 'Newsreader', Georgia, serif;
+    font-style: italic;
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--ink-soft);
+}
+
+/* Stats: a connection dot, tabular mono figures, a help tip */
+.stats {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.72rem;
+    line-height: 1;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* Stream state: green while /live is in flight, red when it drops. */
+.conn {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--down);
+    transition: background-color 0.25s ease;
+}
+
+.conn.on {
+    background: var(--live);
+    box-shadow: 0 0 6px rgba(22, 163, 74, 0.45);
+}
+
+.stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.stat b {
+    color: var(--ink);
+    font-weight: 500;
+}
+
+.sep {
+    color: var(--rule);
+}
+
+.muted {
+    opacity: 0.8;
+}
+
+.tip {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 0.62rem;
+    cursor: help;
+}
+
+.tip:hover {
+    border-color: var(--muted);
+    color: var(--ink);
+}
+
+/* Stage: the board fills it and scrolls past the edges on small screens */
+.stage {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    background: var(--field);
+}
+
+/* The board: a 16x16 grid of chunks over hairline gridlines — graph
+   paper. Chunks fill with cells as the viewport scrolls over them. */
+.board {
+    display: grid;
+    grid-template-columns: repeat(16, auto);
+    gap: 1px;
+    width: max-content;
+    background: var(--field-line);
+    border: 1px solid #38311f;
+    /* One finger paints, two fingers pan — native pan is off. */
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    cursor: crosshair;
+}
+
+.chunk {
+    display: grid;
+    grid-template-columns: repeat(16, var(--cell));
+    grid-auto-rows: var(--cell);
+    gap: 1px;
+    width: max-content;
+    background: var(--field-line);
+}
+
+/* Not-yet-rendered chunk: flat paper until the viewport asks for it. */
+.chunk:empty {
+    width: calc(16 * var(--cell) + 15px);
+    height: calc(16 * var(--cell) + 15px);
+    background: var(--dead);
+}
+
+.cell {
+    background: var(--dead);
+}
+
+.cell:hover,
+.cell.sel {
+    box-shadow: inset 0 0 0 1px rgba(255, 243, 205, 0.4);
+}
+
+.cell.alive {
+    /* Newborns pop once — the morph only restarts this on a fresh birth. */
+    animation: born 0.18s ease-out;
+}
+
+/* Age ramp on the dark field: white-gold newborn -> ember -> dim ash */
+.cell.a0 {
+    background: #fff3c4;
+}
+
+.cell.a1 {
+    background: #fcd34d;
+}
+
+.cell.a2 {
+    background: #fbbf24;
+}
+
+.cell.a3 {
+    background: #f59e0b;
+}
+
+.cell.a4 {
+    background: #e07b1f;
+}
+
+.cell.a5 {
+    background: #b4551a;
+}
+
+.cell.a6 {
+    background: #7c3f15;
+}
+
+.cell.a7 {
+    background: #453118;
+}
+
+/* Queued-but-not-yet-applied commands (this tick's pending moves) */
+.cell.ghost {
+    background: rgba(252, 211, 77, 0.25);
+    box-shadow: inset 0 0 0 1px #fcd34d;
+}
+
+.cell.ghost-erase {
+    box-shadow: inset 0 0 0 1px var(--erase);
+}
+
+@keyframes born {
+    0% {
+        transform: scale(0.5);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Small screens: keep the cells, let the stage scroll */
+@media (max-width: 640px) {
+    .topbar {
+        padding: 0.5rem 0.9rem;
+        gap: 0.45rem;
+    }
+
+    .stats {
+        font-size: 0.62rem;
+        gap: 0.35rem;
+    }
+
+    .stat.muted {
+        display: none;
+    }
+}

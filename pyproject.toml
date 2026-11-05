@@ -1,0 +1,42 @@
+[project]
+name = "life"
+version = "0.1.0"
+description = "One shared Game of Life world that ticks five times a second. A Stario demo."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "stario>=5.4.0,<6",
+]
+
+[dependency-groups]
+dev = [
+    "pyrefly>=1.4.1",
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.4.1.post1",
+    "ruff>=0.17.4",
+    "watchfiles>=1.3.0",
+]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+src = ["app", "tests"]
+extend-exclude = [".agents", ".claude", ".cursor"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]  # ruff format owns the line length
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.pyrefly]
+python-version = "3.14"
+project-includes = ["app", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "--tb=short"
