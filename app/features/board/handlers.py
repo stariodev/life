@@ -81,6 +81,7 @@ class LifePage:
 
     game: Game
     relay: Relay[str]
+    public_url: str  # for the share preview in the page head
 
     def register(self, app: App) -> None:
         app.add(HOME, self.home)
@@ -89,7 +90,7 @@ class LifePage:
         app.add(VIEW, self.view)
 
     async def home(self, c: Context, w: Writer) -> None:
-        w.html(render(uuid.uuid7().hex, self.game))
+        w.html(render(uuid.uuid7().hex, self.game, self.public_url))
 
     async def live(self, c: Context, w: Writer) -> None:
         signals = await read_signals(c.req)

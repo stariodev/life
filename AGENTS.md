@@ -122,10 +122,12 @@ Notes for this app go below. `stario-create sync` replaces the text above and ke
 
 Life is the demo at life.stario.dev: one shared 256x256 Conway world at 5 Hz.
 
-There is no `app/config.py`: Life has no settings. The engine is `app/life/game.py`; the page, its stream, and the tick loop are in `app/features/board/`.
+`app/config.py` holds one setting, `PUBLIC_URL` (default `https://life.stario.dev`), which makes the share preview's links absolute. The engine is `app/life/game.py`; the page, its stream, and the tick loop are in `app/features/board/`.
 
 Two rules of the guide do not fit this page, on purpose. The stream does not send `render(...)` again: 65,536 cells at 5 Hz is too much, so `/live` patches `#chunk-…` and `#cell-…` by id, and `#board` renders once so its listeners bind once (`PARTIAL_STREAMS` in `tests/test_pages.py`). Each tab has its own Relay subject, `life.v.<id>`, and `broadcast()` publishes per tab.
 
 Keep `flush()` with its drain timeout around every stream write: a vanished client otherwise buffers every frame, and memory grows without bound. Keep the subject check in `visitor_id()`.
 
 Deploy: `yard app new --repo https://github.com/stariodev/life --caddy life.stario.dev`.
+
+Files kept in two places: `static/js/datastar.js` is the Datastar build that stario-create ships, the same file as in stariodev/tiles and stario.dev. `stario-create sync` does not touch it. When Stario moves to a new Datastar, copy the file from a fresh `uvx stario-create new` into all three. `static/images/share.jpg` is the poster of the Life clip, made in bobowski-site (`MEDIA.md`); `static/images/logo-stario.webp` and `favicon-32.png` come from stario-site. Copy them again when the originals change.
