@@ -4,6 +4,8 @@ import asyncio
 import json
 from urllib.parse import quote
 
+from stario.testing import TestClient
+
 from app.features.board.urls import DROP, HOME, LIVE, VIEW
 from app.life.game import (
     _GOSPER_GUN,
@@ -12,6 +14,7 @@ from app.life.game import (
     MAX_PER_PLAYER,
     Game,
 )
+from app.main import bootstrap
 
 
 def _i(x: int, y: int) -> int:
@@ -286,3 +289,20 @@ async def test_view_pushes_newly_visible_chunks(client) -> None:
                 patches.append(event["data"])
         moved = next(p for p in patches if 'id="chunk-15"' in p)
         assert 'id="chunk-0"' not in moved  # outside the new viewport
+
+
+async def test_the_page_has_a_share_preview(client) -> None:
+    r = await client.get(HOME.href())
+    assert '<meta property="og:title" content="Life — Stario"/>' in r.text
+    assert '<meta property="og:url" content="https://life.stario.dev"/>' in r.text
+    assert (
+        '<meta property="og:image" content="https://life.stario.dev/static/images/share.' in r.text
+    )
+    assert '<meta name="twitter:card" content="summary_large_image"/>' in r.text
+
+
+async def test_public_url_sets_the_preview_links(monkeypatch) -> None:
+    monkeypatch.setenv("PUBLIC_URL", "https://life.example.com/")
+    async with TestClient(bootstrap, request_timeout=5) as client:
+        r = await client.get(HOME.href())
+    assert '<meta property="og:url" content="https://life.example.com"/>' in r.text

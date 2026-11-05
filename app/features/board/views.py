@@ -10,7 +10,7 @@ from stario import h
 from stario.datastar import at, data
 from stario.markup import HtmlElement, SafeString
 
-from app.assets import LOGO_URL
+from app.assets import LOGO_URL, SHARE_IMAGE
 from app.common.shell import page
 from app.features.board.urls import DROP, LIVE, VIEW
 from app.life.game import (
@@ -147,7 +147,7 @@ def topbar_view(game: Game) -> HtmlElement:
     )
 
 
-def render(visitor: str, game: Game) -> HtmlElement:
+def render(visitor: str, game: Game, public_url: str) -> HtmlElement:
     return page(
         "Life — Stario",
         h.Div(
@@ -167,4 +167,6 @@ def render(visitor: str, game: Game) -> HtmlElement:
                 SafeString(_BOARD_SHELL),
             ),
         ),
+        public_url,
+        public_url + SHARE_IMAGE,
     )

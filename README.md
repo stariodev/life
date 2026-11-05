@@ -25,6 +25,7 @@ POST /view   the tab scrolled; the chunks that came into view arrive on /live
 ```text
 app/
   main.py                  bootstrap: the Game, the Relay, the page, and the tick loop
+  config.py                every setting, read from the environment
   life/game.py             the Conway engine: the board, the command queue, step(); no HTTP
   common/shell.py          the <html> document
   features/board/
@@ -67,6 +68,10 @@ yard app new --repo https://github.com/stariodev/life --caddy life.example.com
 ```
 
 Yard sees a `pyproject.toml` that lists `stario` and a `uv.lock`, writes the container file, and starts `python -m app.main`. For your own copy, fork the repo and run `yard app new --caddy life.example.com` in your checkout. Each push then deploys.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `PUBLIC_URL` | `https://life.stario.dev` | The address this copy is served at. The share preview (the title, text, and picture a chat shows for a link) needs absolute links. Set it to your own address. |
 
 ## Good to know
 
